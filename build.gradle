@@ -4,18 +4,24 @@ version '1.0-SNAPSHOT'
 buildscript {
     ext {
         springBootVersion = '1.5.9.RELEASE'
+        gradleVersion = '4.7' // Used for Gradle Wrapper
     }
     repositories {
         mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath('gradle.plugin.com.palantir.gradle.docker:gradle-docker:0.19.2')
     }
 }
 
 apply plugin: 'java'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'com.palantir.docker'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -34,5 +40,22 @@ dependencies {
     // include spring-boot-starter, jackson, spring-core, spring-mvc, spring-boot-starter-tomcat
     compile 'org.springframework.boot:spring-boot-starter-web'
     testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+task wrapper(type: Wrapper) {
+    description = 'Download the gradle wrapper and requisite files. Overwrites existing wrapper.'
+    gradleVersion = project.gradleVersion
+}
+
+jar {
+    baseName = 'spring-boot-docker'
+    version =  '0.1.0'
+}
+
+docker {
+    dependsOn build
+    name "${project.group}/${jar.baseName}"
+    files jar.archivePath
+    buildArgs(['JAR_FILE': "${jar.archiveName}"])
 }
 
